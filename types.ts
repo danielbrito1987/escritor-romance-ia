@@ -1,6 +1,7 @@
 
 export type StoryTone = 'paixão' | 'drama' | 'leve' | 'clássico' | 'proibido';
 export type StoryLength = 'curta' | 'média' | 'longa';
+export type StoryEnding = 'feliz' | 'agridoce' | 'triste' | 'aberto' | 'surpreendente';
 
 export interface StoryParams {
   personagem1: string;
@@ -8,6 +9,7 @@ export interface StoryParams {
   cenario: string;
   tom: StoryTone;
   comprimento: StoryLength;
+  final: StoryEnding;
   tema?: string;
 }
 

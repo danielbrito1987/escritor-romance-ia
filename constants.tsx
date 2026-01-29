@@ -18,6 +18,14 @@ export const TONES = [
   { value: 'proibido', label: 'Amor Proibido', color: 'bg-slate-100 text-slate-700' },
 ];
 
+export const ENDINGS = [
+  { value: 'feliz', label: 'Feliz para Sempre', description: 'O final clássico e aquecedor.' },
+  { value: 'agridoce', label: 'Agridoce', description: 'Realista, com ganhos e perdas.' },
+  { value: 'triste', label: 'Trágico', description: 'Prepare os lenços, o amor dói.' },
+  { value: 'aberto', label: 'Final Aberto', description: 'Deixe o leitor imaginar o destino.' },
+  { value: 'surpreendente', label: 'Surpreendente', description: 'Uma reviravolta que ninguém espera.' },
+];
+
 export const LENGTHS = [
   { value: 'curta', label: 'Curta (300 palavras)' },
   { value: 'média', label: 'Média (600 palavras)' },

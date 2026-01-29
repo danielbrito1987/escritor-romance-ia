@@ -53,7 +53,7 @@ const StoryDisplay: React.FC<StoryDisplayProps> = ({ content, onSave }) => {
       </div>
 
       <div className="mt-12 text-center">
-        <p className="text-rose-300 font-romantic text-2xl italic">E viveram felizes para sempre...</p>
+        <p className="text-rose-300 font-romantic text-2xl italic">Fim da história...</p>
       </div>
     </div>
   );

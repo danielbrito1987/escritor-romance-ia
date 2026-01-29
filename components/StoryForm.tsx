@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { StoryParams, StoryTone, StoryLength } from '../types';
-import { TONES, LENGTHS } from '../constants';
+import { StoryParams, StoryTone, StoryLength, StoryEnding } from '../types';
+import { TONES, LENGTHS, ENDINGS } from '../constants';
 
 interface StoryFormProps {
   onSubmit: (params: StoryParams) => void;
@@ -15,6 +15,7 @@ const StoryForm: React.FC<StoryFormProps> = ({ onSubmit, isLoading }) => {
     cenario: '',
     tom: 'paixão',
     comprimento: 'média',
+    final: 'feliz',
     tema: ''
   });
 
@@ -106,6 +107,29 @@ const StoryForm: React.FC<StoryFormProps> = ({ onSubmit, isLoading }) => {
               <option key={l.value} value={l.value}>{l.label}</option>
             ))}
           </select>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-rose-700 mb-2">Como a história termina?</label>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          {ENDINGS.map(e => (
+            <button
+              key={e.value}
+              type="button"
+              onClick={() => setFormData(p => ({ ...p, final: e.value as StoryEnding }))}
+              className={`p-3 rounded-xl text-center transition-all flex flex-col items-center justify-center gap-1 ${
+                formData.final === e.value
+                  ? 'bg-rose-500 text-white shadow-lg scale-105'
+                  : 'bg-white text-slate-600 border border-rose-100 hover:border-rose-300'
+              }`}
+            >
+              <span className="text-sm font-bold leading-tight">{e.label}</span>
+              <span className={`text-[10px] leading-tight ${formData.final === e.value ? 'text-rose-100' : 'text-slate-400'}`}>
+                {e.description}
+              </span>
+            </button>
+          ))}
         </div>
       </div>
 
