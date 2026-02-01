@@ -3,6 +3,7 @@ export type StoryTone = 'paixão' | 'drama' | 'leve' | 'clássico' | 'proibido';
 export type ChapterLength = 'curto' | 'médio' | 'longo';
 export type BookSize = 'pequeno' | 'médio' | 'grande';
 export type StoryEnding = 'feliz' | 'agridoce' | 'triste' | 'aberto' | 'surpreendente';
+export type ModelType = 'flash' | 'pro';
 
 export interface ChapterOutline {
   chapterNumber: number;
@@ -36,13 +37,14 @@ export interface BookParams {
   chapterLength: ChapterLength;
   bookSize: BookSize;
   final: StoryEnding;
+  modelType: ModelType;
   tema?: string;
 }
 
 export interface SavedStory {
   id: string;
   title: string;
-  content: string; // Mantido para compatibilidade, mas o App agora usará Book
+  content: string;
   date: string;
   params: any;
   bookData?: Book;

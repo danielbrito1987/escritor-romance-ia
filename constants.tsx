@@ -36,3 +36,8 @@ export const CHAPTER_LENGTHS = [
   { value: 'médio', label: 'Médio', words: '~600 palavras' },
   { value: 'longo', label: 'Longo', words: '1000+ palavras' },
 ];
+
+export const AI_MODELS = [
+  { value: 'flash', label: 'Rápida (Flash)', model: 'gemini-3-flash-preview', description: 'Mais veloz e econômica.' },
+  { value: 'pro', label: 'Premium (Pro)', model: 'gemini-3-pro-preview', description: 'Mais criativa e detalhista.' },
+];

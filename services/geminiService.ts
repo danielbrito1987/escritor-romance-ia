@@ -2,10 +2,13 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { BookParams, BookOutline, Chapter } from "../types";
 
-const MODEL_NAME = "gemini-3-pro-preview"; // Usando Pro para melhor coerência narrativa longa
+const getModelName = (type: 'flash' | 'pro') => {
+  return type === 'pro' ? 'gemini-3-pro-preview' : 'gemini-3-flash-preview';
+};
 
 export const generateBookOutline = async (params: BookParams): Promise<BookOutline> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+  const model = getModelName(params.modelType);
   
   const chaptersCount = params.bookSize === 'pequeno' ? 3 : params.bookSize === 'médio' ? 5 : 8;
 
@@ -20,7 +23,7 @@ export const generateBookOutline = async (params: BookParams): Promise<BookOutli
   `;
 
   const response = await ai.models.generateContent({
-    model: MODEL_NAME,
+    model: model,
     contents: prompt,
     config: {
       responseMimeType: "application/json",
@@ -55,6 +58,7 @@ export const generateChapterContent = async (
   previousChapters: Chapter[]
 ): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+  const model = getModelName(params.modelType);
   const currentChapter = outline.chapters[chapterIndex];
   
   const lengthInstruction = params.chapterLength === 'curto' ? 'cerca de 300 palavras' : params.chapterLength === 'médio' ? 'cerca de 600 palavras' : 'mais de 1000 palavras com riqueza extrema de detalhes';
@@ -82,7 +86,7 @@ export const generateChapterContent = async (
   `;
 
   const response = await ai.models.generateContent({
-    model: MODEL_NAME,
+    model: model,
     contents: prompt,
     config: {
       systemInstruction: "Você é Ana Clara, romancista premiada. Sua especialidade é criar arcos de personagens profundos ao longo de vários capítulos.",

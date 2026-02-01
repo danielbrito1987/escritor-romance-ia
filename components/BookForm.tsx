@@ -1,7 +1,7 @@
 
 import React from 'react';
-import { BookParams, StoryTone, BookSize, ChapterLength, StoryEnding } from '../types';
-import { TONES, BOOK_SIZES, CHAPTER_LENGTHS, ENDINGS } from '../constants';
+import { BookParams, StoryTone, BookSize, ChapterLength, StoryEnding, ModelType } from '../types';
+import { TONES, BOOK_SIZES, CHAPTER_LENGTHS, ENDINGS, AI_MODELS } from '../constants';
 
 interface BookFormProps {
   onSubmit: (params: BookParams) => void;
@@ -17,6 +17,7 @@ const BookForm: React.FC<BookFormProps> = ({ onSubmit, isLoading }) => {
     bookSize: 'pequeno',
     chapterLength: 'médio',
     final: 'feliz',
+    modelType: 'flash',
     tema: ''
   });
 
@@ -68,7 +69,7 @@ const BookForm: React.FC<BookFormProps> = ({ onSubmit, isLoading }) => {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div>
           <label className="block text-sm font-semibold text-rose-700 mb-2">Volume do Livro</label>
           <select 
@@ -99,6 +100,16 @@ const BookForm: React.FC<BookFormProps> = ({ onSubmit, isLoading }) => {
             {TONES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
           </select>
         </div>
+        <div>
+          <label className="block text-sm font-semibold text-rose-700 mb-2">Inteligência (IA)</label>
+          <select 
+            className="w-full px-4 py-3 rounded-xl border border-rose-200 outline-none"
+            value={formData.modelType}
+            onChange={e => setFormData(p => ({...p, modelType: e.target.value as ModelType}))}
+          >
+            {AI_MODELS.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+          </select>
+        </div>
       </div>
 
       <div>
@@ -110,7 +121,7 @@ const BookForm: React.FC<BookFormProps> = ({ onSubmit, isLoading }) => {
               type="button"
               onClick={() => setFormData(p => ({...p, final: e.value as StoryEnding}))}
               className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-                formData.final === e.value ? 'bg-rose-500 text-white' : 'bg-rose-50 text-rose-400'
+                formData.final === e.value ? 'bg-rose-500 text-white shadow-md' : 'bg-rose-50 text-rose-400 border border-rose-100'
               }`}
             >
               {e.label}
@@ -122,7 +133,7 @@ const BookForm: React.FC<BookFormProps> = ({ onSubmit, isLoading }) => {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full py-4 rounded-2xl font-bold text-white bg-gradient-to-r from-rose-500 to-pink-600 shadow-lg disabled:opacity-50 flex items-center justify-center gap-2"
+        className="w-full py-4 rounded-2xl font-bold text-white bg-gradient-to-r from-rose-500 to-pink-600 shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 transition-all transform hover:scale-[1.01]"
       >
         {isLoading ? 'Escrevendo sua Obra-Prima...' : '✨ Começar a Escrever Livro'}
       </button>
