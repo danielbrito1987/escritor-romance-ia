@@ -1,56 +1,94 @@
 
-import { GoogleGenAI } from "@google/genai";
-import { StoryParams } from "../types";
+import { GoogleGenAI, Type } from "@google/genai";
+import { BookParams, BookOutline, Chapter } from "../types";
 
-export const generateStory = async (params: StoryParams): Promise<string> => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    throw new Error("API Key não configurada. Por favor, verifique o ambiente.");
-  }
+const MODEL_NAME = "gemini-3-pro-preview"; // Usando Pro para melhor coerência narrativa longa
 
-  const ai = new GoogleGenAI({ apiKey });
+export const generateBookOutline = async (params: BookParams): Promise<BookOutline> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
   
-  // Mapeamento de instruções específicas para o final
-  const endingInstructions = {
-    feliz: "A história deve ter um final feliz e satisfatório, onde o amor triunfa.",
-    agridoce: "O final deve ser agridoce: há amor, mas também uma aceitação melancólica de algo que foi perdido ou que não pode ser.",
-    triste: "O final deve ser triste ou trágico, focando na dor da perda ou da separação, buscando uma catarse emocional profunda.",
-    aberto: "O final deve ser aberto, deixando o destino dos personagens sugestivo e à imaginação do leitor.",
-    surpreendente: "O final deve conter uma reviravolta (plot twist) romântica ou situacional que mude a perspectiva da história até ali."
-  };
+  const chaptersCount = params.bookSize === 'pequeno' ? 3 : params.bookSize === 'médio' ? 5 : 8;
 
   const prompt = `
-    Crie uma história de romance original em português brasileiro com os seguintes detalhes:
-    - Personagem 1: ${params.personagem1}
-    - Personagem 2: ${params.personagem2}
-    - Cenário: ${params.cenario}
-    - Tom: ${params.tom}
-    - Comprimento desejado: ${params.comprimento}
-    ${params.tema ? `- Tema adicional: ${params.tema}` : ''}
-
-    Instruções para a escritora Ana Clara:
-    - Use tensão emocional palpável.
-    - Diálogos naturais e fluidos.
-    - Descrições sensoriais (cheiros, toques, sons).
-    - DESFECHO: ${endingInstructions[params.final]}
-    - O texto deve ser formatado em parágrafos claros.
-    - Adicione um título romântico e criativo no topo.
+    Crie o esboço de um livro de romance completo com ${chaptersCount} capítulos.
+    Protagonistas: ${params.personagem1} e ${params.personagem2}.
+    Cenário: ${params.cenario}.
+    Tom: ${params.tom}.
+    Final esperado: ${params.final}.
+    
+    O retorno deve ser um objeto JSON contendo um "bookTitle" criativo e uma lista de "chapters" com "chapterNumber", "title" e um "summary" detalhado do que acontece naquele capítulo para guiar a escrita posterior.
   `;
 
-  try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
-      contents: prompt,
-      config: {
-        systemInstruction: "Você é Ana Clara, uma renomada escritora brasileira de romances. Sua escrita é envolvente e rica em detalhes emocionais. Você é versátil e capaz de escrever desde contos de fadas modernos até tragédias românticas intensas, sempre mantendo a elegância e a profundidade dos personagens.",
-        temperature: 0.8,
-        topP: 0.95,
-      },
-    });
+  const response = await ai.models.generateContent({
+    model: MODEL_NAME,
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          bookTitle: { type: Type.STRING },
+          chapters: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                chapterNumber: { type: Type.NUMBER },
+                title: { type: Type.STRING },
+                summary: { type: Type.STRING }
+              }
+            }
+          }
+        },
+        required: ["bookTitle", "chapters"]
+      }
+    }
+  });
 
-    return response.text || "Desculpe, não consegui gerar sua história de amor agora.";
-  } catch (error) {
-    console.error("Erro ao gerar história:", error);
-    throw new Error("Falha ao conectar com a IA. Tente novamente em instantes.");
-  }
+  return JSON.parse(response.text);
+};
+
+export const generateChapterContent = async (
+  params: BookParams, 
+  outline: BookOutline, 
+  chapterIndex: number,
+  previousChapters: Chapter[]
+): Promise<string> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY! });
+  const currentChapter = outline.chapters[chapterIndex];
+  
+  const lengthInstruction = params.chapterLength === 'curto' ? 'cerca de 300 palavras' : params.chapterLength === 'médio' ? 'cerca de 600 palavras' : 'mais de 1000 palavras com riqueza extrema de detalhes';
+
+  const context = previousChapters.length > 0 
+    ? `Nos capítulos anteriores: ${previousChapters.map((c, i) => `Cap ${i+1}: ${c.title}`).join(', ')}.`
+    : "Este é o capítulo de abertura.";
+
+  const prompt = `
+    Você é a escritora Ana Clara. Escreva o Capítulo ${currentChapter.chapterNumber}: "${currentChapter.title}" do livro "${outline.bookTitle}".
+    
+    Resumo do capítulo: ${currentChapter.summary}
+    Contexto da obra: ${context}
+    
+    Personagens: ${params.personagem1} e ${params.personagem2}.
+    Tom: ${params.tom}.
+    Tamanho desejado: ${lengthInstruction}.
+
+    Instruções de Estilo:
+    - Foco em diálogos realistas e tensão emocional.
+    - Descrições sensoriais profundas.
+    - Não finalize a história prematuramente a menos que seja o último capítulo.
+    - Se for o último capítulo, aplique o desfecho: ${params.final}.
+    - Retorne apenas o texto do corpo do capítulo, sem o título no topo.
+  `;
+
+  const response = await ai.models.generateContent({
+    model: MODEL_NAME,
+    contents: prompt,
+    config: {
+      systemInstruction: "Você é Ana Clara, romancista premiada. Sua especialidade é criar arcos de personagens profundos ao longo de vários capítulos.",
+      temperature: 0.8
+    }
+  });
+
+  return response.text;
 };

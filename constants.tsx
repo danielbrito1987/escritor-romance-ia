@@ -1,5 +1,4 @@
 
-import React from 'react';
 import { Theme } from './types';
 
 export const THEMES: Theme[] = [
@@ -26,8 +25,14 @@ export const ENDINGS = [
   { value: 'surpreendente', label: 'Surpreendente', description: 'Uma reviravolta que ninguém espera.' },
 ];
 
-export const LENGTHS = [
-  { value: 'curta', label: 'Curta (300 palavras)' },
-  { value: 'média', label: 'Média (600 palavras)' },
-  { value: 'longa', label: 'Longa (1000+ palavras)' },
+export const BOOK_SIZES = [
+  { value: 'pequeno', label: 'Pequeno', chapters: 3, description: '3 Capítulos' },
+  { value: 'médio', label: 'Médio', chapters: 5, description: '5 Capítulos' },
+  { value: 'grande', label: 'Grande', chapters: 8, description: '8 Capítulos' },
+];
+
+export const CHAPTER_LENGTHS = [
+  { value: 'curto', label: 'Curto', words: '~300 palavras' },
+  { value: 'médio', label: 'Médio', words: '~600 palavras' },
+  { value: 'longo', label: 'Longo', words: '1000+ palavras' },
 ];

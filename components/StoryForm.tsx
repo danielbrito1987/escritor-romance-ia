@@ -1,20 +1,25 @@
 
 import React from 'react';
-import { StoryParams, StoryTone, StoryLength, StoryEnding } from '../types';
-import { TONES, LENGTHS, ENDINGS } from '../constants';
+/* Fix: Import BookParams and ChapterLength instead of non-existent StoryParams and StoryLength */
+import { BookParams, StoryTone, ChapterLength, StoryEnding } from '../types';
+/* Fix: Import CHAPTER_LENGTHS instead of non-existent LENGTHS */
+import { TONES, CHAPTER_LENGTHS, ENDINGS } from '../constants';
 
 interface StoryFormProps {
-  onSubmit: (params: StoryParams) => void;
+  /* Fix: Use BookParams */
+  onSubmit: (params: BookParams) => void;
   isLoading: boolean;
 }
 
 const StoryForm: React.FC<StoryFormProps> = ({ onSubmit, isLoading }) => {
-  const [formData, setFormData] = React.useState<StoryParams>({
+  /* Fix: Use BookParams and align fields with the interface defined in types.ts */
+  const [formData, setFormData] = React.useState<BookParams>({
     personagem1: '',
     personagem2: '',
     cenario: '',
     tom: 'paixão',
-    comprimento: 'média',
+    chapterLength: 'médio',
+    bookSize: 'médio',
     final: 'feliz',
     tema: ''
   });
@@ -96,14 +101,15 @@ const StoryForm: React.FC<StoryFormProps> = ({ onSubmit, isLoading }) => {
           </div>
         </div>
         <div>
-          <label className="block text-sm font-semibold text-rose-700 mb-2">Comprimento</label>
+          <label className="block text-sm font-semibold text-rose-700 mb-2">Tamanho do Capítulo</label>
           <select
-            name="comprimento"
-            value={formData.comprimento}
+            name="chapterLength"
+            value={formData.chapterLength}
             onChange={handleChange}
             className="w-full px-4 py-3 rounded-xl border border-rose-200 focus:ring-2 focus:ring-rose-400 outline-none"
           >
-            {LENGTHS.map(l => (
+            {/* Fix: Use CHAPTER_LENGTHS constant instead of LENGTHS */}
+            {CHAPTER_LENGTHS.map(l => (
               <option key={l.value} value={l.value}>{l.label}</option>
             ))}
           </select>

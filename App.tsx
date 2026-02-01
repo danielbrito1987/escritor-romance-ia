@@ -1,119 +1,136 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './components/Header';
-import StoryForm from './components/StoryForm';
-import StoryDisplay from './components/StoryDisplay';
+import BookDisplay from './components/BookDisplay';
 import StoryHistory from './components/StoryHistory';
 import ThemeSelector from './components/ThemeSelector';
-import { StoryParams, SavedStory, Theme } from './types';
-import { generateStory } from './services/geminiService';
+import { BookParams, Book, Chapter, BookOutline } from './types';
+import { generateBookOutline, generateChapterContent } from './services/geminiService';
+import BookForm from './components/BookForm';
 
 const App: React.FC = () => {
-  const [currentStory, setCurrentStory] = useState<string | null>(null);
-  const [history, setHistory] = useState<SavedStory[]>([]);
+  const [currentBook, setCurrentBook] = useState<Book | null>(null);
+  const [history, setHistory] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0, stage: '' });
   const [error, setError] = useState<string | null>(null);
 
-  // Load history on mount
   useEffect(() => {
-    const saved = localStorage.getItem('romance_history');
-    if (saved) {
-      try {
-        setHistory(JSON.parse(saved));
-      } catch (e) {
-        console.error("Erro ao carregar histórico", e);
-      }
-    }
+    const saved = localStorage.getItem('romance_books_history');
+    if (saved) setHistory(JSON.parse(saved));
   }, []);
 
-  // Save history when it changes
-  useEffect(() => {
-    localStorage.setItem('romance_history', JSON.stringify(history));
-  }, [history]);
-
-  const handleGenerate = async (params: StoryParams) => {
+  const handleGenerateBook = async (params: BookParams) => {
     setIsLoading(true);
     setError(null);
-    setCurrentStory(null);
-
+    setCurrentBook(null);
+    
     try {
-      const result = await generateStory(params);
-      setCurrentStory(result);
+      // Step 1: Outline
+      setProgress({ current: 0, total: 1, stage: 'Planejando a estrutura narrativa...' });
+      const outline: BookOutline = await generateBookOutline(params);
       
-      // Save to history automatically
-      const title = result.split('\n')[0] || "Sem Título";
-      const newSaved: SavedStory = {
+      const totalChapters = outline.chapters.length;
+      const writtenChapters: Chapter[] = [];
+
+      // Step 2: Sequential Writing
+      for (let i = 0; i < totalChapters; i++) {
+        setProgress({ 
+          current: i + 1, 
+          total: totalChapters, 
+          stage: `Escrevendo Capítulo ${i + 1}: ${outline.chapters[i].title}...` 
+        });
+        
+        const content = await generateChapterContent(params, outline, i, writtenChapters);
+        writtenChapters.push({
+          title: outline.chapters[i].title,
+          content
+        });
+      }
+
+      const finalBook: Book = {
         id: Date.now().toString(),
-        title,
-        content: result,
-        date: new Date().toLocaleDateString('pt-BR'),
-        params
+        title: outline.bookTitle,
+        chapters: writtenChapters,
+        params,
+        date: new Date().toLocaleDateString('pt-BR')
       };
-      setHistory(prev => [newSaved, ...prev]);
-      
-      // Scroll to story
-      setTimeout(() => {
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-      }, 300);
+
+      setCurrentBook(finalBook);
+      setHistory(prev => [finalBook, ...prev]);
+      localStorage.setItem('romance_books_history', JSON.stringify([finalBook, ...history]));
+
     } catch (err: any) {
-      setError(err.message || "Ocorreu um erro inesperado.");
+      setError("A Ana Clara teve um bloqueio criativo: " + err.message);
     } finally {
       setIsLoading(false);
+      setProgress({ current: 0, total: 0, stage: '' });
     }
-  };
-
-  const deleteStory = (id: string) => {
-    setHistory(prev => prev.filter(s => s.id !== id));
-  };
-
-  const selectStoryFromHistory = (story: SavedStory) => {
-    setCurrentStory(story.content);
-    window.scrollTo({ top: 400, behavior: 'smooth' });
-  };
-
-  const handleThemeSelect = (theme: Theme) => {
-    // We can pre-fill parts of the form or just scroll to it
-    alert(`Tema "${theme.name}" selecionado! Preencha os protagonistas para começar.`);
-    const formElement = document.getElementById('story-form');
-    formElement?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
-    <div className="min-h-screen pb-20 px-4 max-w-5xl mx-auto">
+    <div className="min-h-screen pb-20 px-4 max-w-6xl mx-auto">
       <Header />
       
       <main>
-        <div className="mb-8">
-           <h3 className="text-rose-800 font-bold mb-4 flex items-center gap-2">
-            <span>💡</span> Escolha um Tema Inspirador
-           </h3>
-           <ThemeSelector onSelect={handleThemeSelect} />
-        </div>
-
-        <div id="story-form">
-          <StoryForm onSubmit={handleGenerate} isLoading={isLoading} />
-        </div>
-
-        {error && (
-          <div className="mt-8 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-center font-medium animate-bounce">
-            ⚠️ {error}
+        {!currentBook && (
+          <div className="mb-12">
+            <ThemeSelector onSelect={(t) => alert(`Tema ${t.name} selecionado! Agora defina os detalhes do seu livro.`)} />
+            <BookForm onSubmit={handleGenerateBook} isLoading={isLoading} />
           </div>
         )}
 
-        {currentStory && (
-          <StoryDisplay content={currentStory} />
+        {isLoading && (
+          <div className="my-12 p-8 bg-white rounded-3xl shadow-xl text-center border-2 border-rose-100 animate-pulse">
+            <div className="w-full bg-rose-50 h-4 rounded-full overflow-hidden mb-6">
+              <div 
+                className="bg-rose-500 h-full transition-all duration-500" 
+                style={{ width: `${(progress.current / progress.total) * 100}%` }}
+              ></div>
+            </div>
+            <h3 className="text-rose-800 font-serif text-2xl font-bold mb-2">{progress.stage}</h3>
+            <p className="text-rose-400 italic">Isso pode levar alguns minutos, estamos criando um mundo inteiro para você.</p>
+          </div>
         )}
 
-        <StoryHistory 
-          stories={history} 
-          onDelete={deleteStory} 
-          onSelect={selectStoryFromHistory} 
-        />
-      </main>
+        {error && (
+          <div className="p-6 bg-red-50 text-red-600 rounded-2xl mb-8 border border-red-100">
+            {error}
+          </div>
+        )}
 
-      <footer className="mt-20 pt-8 border-t border-rose-100 text-center text-rose-300 text-sm italic">
-        Criado com ❤️ por Escritor de Romances IA
-      </footer>
+        {currentBook && (
+          <div className="mb-12">
+            <button 
+              onClick={() => setCurrentBook(null)}
+              className="mb-4 text-rose-500 font-bold flex items-center gap-2 hover:underline"
+            >
+              ← Escrever outro livro
+            </button>
+            <BookDisplay book={currentBook} />
+          </div>
+        )}
+
+        {history.length > 0 && !isLoading && (
+          <div className="mt-20 border-t pt-12 border-rose-100">
+            <h2 className="text-3xl font-serif text-rose-800 font-bold mb-8">Sua Estante de Obras</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {history.map((book: any) => (
+                <div 
+                  key={book.id}
+                  onClick={() => setCurrentBook(book)}
+                  className="bg-white p-6 rounded-2xl shadow-md border border-rose-50 cursor-pointer hover:shadow-xl transition-all group"
+                >
+                  <div className="w-12 h-1 bg-rose-300 mb-4 group-hover:w-full transition-all"></div>
+                  <h4 className="text-rose-700 font-bold mb-2">{book.title}</h4>
+                  <p className="text-slate-400 text-xs mb-4">{book.date} • {book.chapters?.length || 0} Capítulos</p>
+                  <button className="text-rose-400 text-sm font-bold group-hover:text-rose-600 transition-colors">Abrir Livro →</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 };
